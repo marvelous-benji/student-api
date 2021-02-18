@@ -3,18 +3,16 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
-#from marshmallow_sqlalchemy import ModelSchema
 from marshmallow import fields, Schema
-#from flask_marshmallow import Marshmallow
 from datetime import datetime
+import os
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = "mysql://bj:k@li@localhost/records"
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///:memory"
 app.config['SECRET_KEY'] = 'JHFJKDD8873404//P3P;;-=039'
 db = SQLAlchemy(app)
 migrate = Migrate(app,db)
 admin = Admin(app)
-#ma = Marshmallow(app)
 
 
 mycourse = db.Table('mycourse',
@@ -145,7 +143,7 @@ def delete_student(id):
 @app.route('/api/v1/subjects', methods=['GET'])
 def get_subjects():
     data = Subject.query.all()
-    subjects = SubjectSchema().dump(data, many=True)
+    subjects = SubjectSchema(exclude=('students','updated_on')).dump(data, many=True)
     for subj in subjects:
     	subj['created_on'] = subj['created_on'][:10]
     	subj['updated_on'] = subj['updated_on'][:10]
@@ -155,7 +153,7 @@ def get_subjects():
 def get_subject(id):
     data = Subject.query.get(id)
     if data:
-        subject = SubjectSchema(only=('id','sub_name')).dump(data)
+        subject = SubjectSchema(only=('id','sub_name',)).dump(data)
         return jsonify({'subject':subject})
     else:
         return jsonify({'error':'resource not found'})
