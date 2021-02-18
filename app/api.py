@@ -6,10 +6,12 @@ from flask_admin.contrib.sqla import ModelView
 from marshmallow import fields, Schema
 from datetime import datetime
 import os
+import psycopg2
 
 app = Flask(__name__)
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] ='sqlite:///' + os.path.join(basedir, 'data.sqlite')
+DATABASE_URL = os.environ['DATABASE_URL']
+
+conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 app.config['SECRET_KEY'] = 'JHFJKDD8873404//P3P;;-=039'
 db = SQLAlchemy(app)
 migrate = Migrate(app,db)
