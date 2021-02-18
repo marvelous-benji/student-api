@@ -149,7 +149,7 @@ def get_subjects():
     subjects = SubjectSchema(exclude=('students','updated_on')).dump(data, many=True)
     for subj in subjects:
     	subj['created_on'] = subj['created_on'][:10]
-    	subj['updated_on'] = subj['updated_on'][:10]
+    	#subj['updated_on'] = subj['updated_on'][:10]
     return make_response(jsonify({'subjects':subjects}))
 
 @app.route('/api/v1/subject/<int:id>', methods=['GET'])
@@ -171,7 +171,6 @@ def create_subject():
         db.session.commit()
         return jsonify({'success':'resource created'})
     except Exception as e:
-        print(e)
         return jsonify({'error':'resource was not created'})
 
 @app.route('/api/v1/subject/<int:id>', methods=['PUT'])
