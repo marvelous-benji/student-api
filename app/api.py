@@ -8,7 +8,7 @@ from datetime import datetime
 import os
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///:memory"
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///mydata.db"
 app.config['SECRET_KEY'] = 'JHFJKDD8873404//P3P;;-=039'
 db = SQLAlchemy(app)
 migrate = Migrate(app,db)
