@@ -123,7 +123,7 @@ def update_student(id):
         if data.get('firstname'):
             student.firstname = data['firstname']
         if data.get('lastname'):
-            student.lastname = data['firstname']
+            student.lastname = data['lastname']
         if data.get('department'):
             student.department = data['department']
         if data.get('level'):
