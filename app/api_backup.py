@@ -6,57 +6,19 @@ from flask_admin.contrib.sqla import ModelView
 from marshmallow import fields, Schema
 from datetime import datetime
 import os
-#import psycopg2
-from passlib.hash import pbkdf2_sha256 as sha256
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required
-
+import psycopg2
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-app.config['SECRET_KEY'] = os.getenv('SECRETS')
+DATABASE_URL = os.environ['DATABASE_URL']
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+app.config['SECRET_KEY'] = 'JHFJKDD8873404//P3P;;-=039'
 db = SQLAlchemy(app)
 migrate = Migrate(app,db)
 admin = Admin(app)
-jwt = JWTManager(app)
-
-
-
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80),nullable=False, unique=True)
-    password = db.Column(db.String(120), nullable=False)
-
-    def create_user(self):
-        db.session.add(self)
-        db.session.commit()
-
-    @classmethod
-    def find_by_username(cls,username):
-        cls.query.filter_by(username=username).first()
-
-    @staticmethod
-    def generate_hash(password):
-        return sha256.hash(password)
-
-    @staticmethod
-    def verify_hash(password, hash):
-        return sha256.verify(password,hash)
-
-    def __repr__(self):
-        return f"User('{self.username}')"
-
-class UserSchema(Schema):
-    class Meta:
-        model = User
-        sqla_session = db.session
-
-    id = fields.Integer(dump_only=True)
-    username = fields.String(required=True)
-    password = fields.String(required=True)
 
 
 mycourse = db.Table('mycourse',
-            db.Column('id', db.Integer, primary_key=True),
             db.Column('student_id',db.Integer,db.ForeignKey('student.id')),
             db.Column('subject_id', db.Integer, db.ForeignKey('subject.id')))
 
@@ -122,48 +84,7 @@ admin.add_view(ModelView(Student,db.session))
 admin.add_view(ModelView(Subject,db.session))
 
 
-@app.route('/user/signup', methods=['POST'])
-def register_user():
-    try:
-        data = request.get_json()
-        data['password'] = User.generate_hash(data['password'])
-        print(data)
-        userschema = UserSchema()
-        user = userschema.load(data)
-        print(user)
-        newuser = User(username=user['username'],password=user['password'])
-        User.create_user(newuser)
-        return jsonify({'success':'resource created'})
-    except Exception as e:
-        print(e)
-        return jsonify({'error':'invalid input'})
-
-@app.route('/user/login', methods=['POST'])
-def login_user():
-    try:
-        data = request.get_json()
-        print(data['username'])
-        current_user = User.query.filter_by(username=data['username']).first()
-        print(current_user)
-        if not current_user:
-            return make_response(jsonify({'error':'username or password incorrect'}),404)
-        if User.verify_hash(data['password'], current_user.password):
-            access_token = create_access_token(identity=data['username'])
-            return jsonify({'message':f"logged in as {data['username']}",
-                            'access_token':access_token
-                            })
-        else:
-            return make_response(jsonify({'error':'username or password incorrect'}))
-    except Exception as e:
-        print(e)
-        return jsonify({'error':'invalid input'})
-
-
-
-
-
 @app.route('/api/v1/students', methods=['GET'])
-@jwt_required()
 def get_students():
     data = Student.query.all()
     students = StudentSchema(exclude=('subjects',)).dump(data, many=True)
@@ -172,7 +93,6 @@ def get_students():
     return make_response(jsonify({'students':students}))
 
 @app.route('/api/v1/student/<int:id>', methods=['GET'])
-@jwt_required()
 def get_student(id):
     data = Student.query.get(id)
     if data:
@@ -183,7 +103,6 @@ def get_student(id):
         return jsonify({'error':'resource not found'})
 
 @app.route('/api/v1/students', methods=['POST'])
-@jwt_required()
 def create_student():
     data = request.get_json()
     try:
@@ -197,7 +116,6 @@ def create_student():
         return jsonify({'error':'resource was not created'})
 
 @app.route('/api/v1/student/<int:id>', methods=['PUT'])
-@jwt_required()
 def update_student(id):
     data = request.get_json()
     student = Student.query.get(id)
@@ -216,7 +134,6 @@ def update_student(id):
         return jsonify({'error':'resource not found'})
 
 @app.route('/api/v1/student/<int:id>', methods=['DELETE'])
-@jwt_required()
 def delete_student(id):
     student = Student.query.get(id)
     if student:
@@ -227,7 +144,6 @@ def delete_student(id):
         return jsonify({'error':'reosource not found'})
 
 @app.route('/api/v1/subjects', methods=['GET'])
-@jwt_required()
 def get_subjects():
     data = Subject.query.all()
     subjects = SubjectSchema(exclude=('students','updated_on')).dump(data, many=True)
@@ -237,7 +153,6 @@ def get_subjects():
     return make_response(jsonify({'subjects':subjects}))
 
 @app.route('/api/v1/subject/<int:id>', methods=['GET'])
-@jwt_required()
 def get_subject(id):
     data = Subject.query.get(id)
     if data:
@@ -247,7 +162,6 @@ def get_subject(id):
         return jsonify({'error':'resource not found'})
 
 @app.route('/api/v1/subject', methods=['POST'])
-@jwt_required()
 def create_subject():
     data = request.get_json()
     subject = SubjectSchema().load(data)
@@ -260,7 +174,6 @@ def create_subject():
         return jsonify({'error':'resource was not created'})
 
 @app.route('/api/v1/subject/<int:id>', methods=['PUT'])
-@jwt_required()
 def update_subject(id):
     data = request.get_json()
     subject = Subject.query.get(id)
@@ -274,7 +187,6 @@ def update_subject(id):
         return jsonify({'error':'resource not found'})
 
 @app.route('/api/v1/subject/<int:id>', methods=['DELETE'])
-@jwt_required()
 def delete_subject(id):
     subject = Subject.query.get(id)
     if subject:
@@ -285,7 +197,6 @@ def delete_subject(id):
         return jsonify({'error':'reosource not found'})
 
 @app.route('/api/v1/student/<int:id>/subjects', methods=['GET'])
-@jwt_required()
 def get_student_subjects(id):
     data = Student.query.get(id)
     if data:
@@ -296,7 +207,6 @@ def get_student_subjects(id):
         return jsonify({'error':'resource not found'})
 
 @app.route('/api/v1/subject/<int:id>/students', methods=['GET'])
-@jwt_required()
 def get_subject_students(id):
     data = Subject.query.get(id)
     if data:
@@ -306,7 +216,6 @@ def get_subject_students(id):
         return jsonify({'error':'resource not found'})
 
 @app.route('/api/v1/student/<int:id>/subject/<int:pk>', methods=['PUT'])
-@jwt_required()
 def add_student_subject(id,pk):
     stud = Student.query.get(id)
     subj = Subject.query.get(pk)
@@ -320,7 +229,6 @@ def add_student_subject(id,pk):
         return jsonify({'error':'resource not found'})
 
 @app.route('/api/v1/student/<int:id>/subject/<int:pk>', methods=['DELETE'])
-@jwt_required()
 def delete_student_subject(id,pk):
     stud = Student.query.get(id)
     subj = Subject.query.get(pk)
