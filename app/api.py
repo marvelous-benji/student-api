@@ -8,7 +8,7 @@ from datetime import datetime
 import os
 from passlib.hash import pbkdf2_sha256 as sha256
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
-
+#ok
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
