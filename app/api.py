@@ -6,7 +6,6 @@ from flask_admin.contrib.sqla import ModelView
 from marshmallow import fields, Schema
 from datetime import datetime
 import os
-#import psycopg2
 from passlib.hash import pbkdf2_sha256 as sha256
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 
